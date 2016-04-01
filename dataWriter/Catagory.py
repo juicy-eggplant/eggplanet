@@ -21,13 +21,34 @@ class Catagory(object):
     def simple_data_pack_company(self):
         return self.vendor
 
+    def simple_data_pack_specific_company(self, c):
+        assert c in self.vendor
+        return self.vendor[c]
+
+    def simple_data_pack_specific_product(self, c, p):
+        assert c in self.vendor
+        return self.vendor[c].specific_product_summary(p)
+
+    def simple_data_pack_timeO_company(self, c):
+        assert c in self.vendor
+        return self.vendor[c].period.general_summary()
+
+    def simple_data_pack_timeO_product(self, c, p):
+        assert c in self.vendor
+        return self.vendor[c].specific_product_time_summary(p)
+
+    
 
 class Period(object):
-    def __init__(self):
+    def __init__(self, name=None):
+        self.name = name
         self.total = 0
         self.year = {}
         self.general_month = {}  # month of all YEAR object in this Period object
         self.date = {}
+
+    def __name__(self):
+        return self.name
 
     def __iter__(self):
         return self.year.iterkeys()
@@ -45,11 +66,13 @@ class Period(object):
         self.general_month[m] = self.general_month.get(m, [0, 0, 0])
         self.general_month[m][s] += 1
 
-        self.year[year] = self.year.get(year, Year(year))
+        self.year[year] = self.year.get(year, Year(year, self.name))
         self.year[year].handler(mon, day, severity)
 
     def __str__(self):
         res = ''
+        if self.name:
+            res += '%s: \n'%self.name 
         for y in self.general_summary():
             res += str(y)
         return res
@@ -75,11 +98,15 @@ class Period(object):
 
 
 class Year(object):
-    def __init__(self, year):
+    def __init__(self, year, name=None):
+        self.name = name
         self.total = 0
         self.severity = [0, 0, 0]
         self.year = year
         self.month = {}
+
+    def __name__(self):
+        return self.name
 
     def __str__(self):
         title = "Year: %s --- Total: %d, Severity: \
@@ -87,6 +114,8 @@ class Year(object):
                                         self.severity[0],
                                         self.severity[1],
                                         self.severity[2])
+        if self.name:
+            title = "%s: \n"%self.name + title
         arr = sorted(self.month)
         body = ""
         for m in arr:
@@ -98,16 +127,20 @@ class Year(object):
         s = _SEVERITY[severity]
         self.severity[s] += 1
 
-        self.month[m] = self.month.get(m, Month(m))
+        self.month[m] = self.month.get(m, Month(m, self.name))
         self.month[m].handler(d, severity)
 
 
 class Month(object):
-    def __init__(self, month):
+    def __init__(self, month, name=None):
+        self.name = name
         self.total = 0
         self.month = month
         self.days = {}
         self.severity = [0, 0, 0]
+
+    def __name__(self):
+        return self.name
 
     def __str__(self):
         return "%s --- Total: %d, Severity: [Low: %d, Medium: %d, High: %d]" % (
@@ -119,18 +152,19 @@ class Month(object):
         self.total += 1
         self.severity[s] += 1
 
-        self.days[d] = self.days.get(d, Day(d))
+        self.days[d] = self.days.get(d, Day(d, self.name))
         self.days[d].handler(severity)
 
 
 class Day(object):
-    def __init__(self, day):
+    def __init__(self, day, name=None):
+        self.name = name
         self.total = 0
         self.day = day
         self.severity = [0, 0, 0]
 
     def __name__(self):
-        return self.day
+        return self.name
 
     def handler(self, severity):
         s = _SEVERITY[severity]
@@ -144,7 +178,7 @@ class Company(object):
         self.prod = {}
         self.total = 0
         self.severity = [0, 0, 0]
-        self.period = Period()
+        self.period = Period(self.vendor.capitalize())
 
     def handler(self, p, severity, date):
         s = _SEVERITY[severity]
@@ -152,11 +186,11 @@ class Company(object):
         self.severity[s] += 1
         self.period.handler(date, severity)
 
-        self.prod[p] = self.prod.get(p, Product(p))
+        self.prod[p] = self.prod.get(p, Product(p, self.__name__()))
         self.prod[p].handler(date, severity)
 
     def __name__(self):
-        return self.vendor
+        return self.vendor.capitalize()
 
     def __len__(self):
         return len(self.prod)
@@ -186,35 +220,36 @@ Number of products: %d,\n\
         return self.total, self.severity, len(self), self.prod
 
     def time_oriented_summary(self):
-        return self.__name__(), self.period
+        return self.period
 
     def specific_product_summary(self, p):
         '''Name of Product,
            Total number of vulnerabilities,
            Number of vulnerabilities in each severity period,
            '''
-        assert self.prod.has_key(p)
+        assert p in self.prod
         return self.prod[p].general_summary()
 
     def specific_product_time_summary(self, p):
-        assert self.prod.has_key(p)
+        assert p in self.prod
         return self.prod[p].time_oriented_summary()
 
 
 class Product(object):
-    def __init__(self, prod):
+    def __init__(self, prod, vendor):
         self.prod = prod
+        self.fullname = "%s's %s"%(vendor, prod.capitalize())
         self.total = 0
         self.severity = [0, 0, 0]
-        self.period = Period()
+        self.period = Period(self.fullname)
 
     def __name__(self):
-        return self.prod
+        return self.prod.capitalize()
 
     def __str__(self):
         return '%s, \
 Total number of vulnerabilities: %d, \
-Severity [Low: %d, Medium: %d, High: %d]' % (self.prod.capitalize(),
+Severity [Low: %d, Medium: %d, High: %d]' % (self.fullname,
                                              self.total,
                                              self.severity[0],
                                              self.severity[1],
@@ -234,4 +269,4 @@ Severity [Low: %d, Medium: %d, High: %d]' % (self.prod.capitalize(),
         return self.prod, self.total, self.severity
 
     def time_oriented_summary(self):
-        return self.__name__(), self.period
+        return self.period.general_summary()
