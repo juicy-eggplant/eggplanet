@@ -11,28 +11,29 @@ def main():
     xmlfiles = [xml for xml in os.listdir('.') if xml.endswith('.xml')]
     xmlfiles.sort()
     assert xmlfiles
-    filename = 'data.csv'
-    with open(filename, 'w') as csvfile:
-        fieldnames = ['Year', 'Total_Number_of_Soft_Vuln',\
-                      'Low', 'Medium', 'High', 'Number_of_Companies_Reporting_Soft_Vuln']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        
-        for xmlfile in xmlfiles:
-            print 'processing %s...'%xmlfile
-            YEAR = setYear(xmlfile) #restraint
-            P = NXParser(xmlfile)
-            packTime = P.simpleDataPack_time()
-            packCompany = P.simpleDataPack_company()
+    for xmlfile in xmlfiles:
+        filename = xmlfile.replace('.xml', '-months.csv')
+        print 'processing %s...'%xmlfile
+        YEAR = setYear(xmlfile)
+        P = NXParser(xmlfile)
+        packTime = P.simpleDataPack_time()
 
-            
+        with open(filename, 'w') as csvfile:
+            fieldnames = ['Month', 'Number_of_Soft_Vuln',\
+                            'Low', 'Medium', 'High']
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writeheader()
             for y in packTime:
                 if y.year != YEAR:
                     continue
-                s = y.severity
-                writer.writerow({fieldnames[0] : y.year, fieldnames[1]: y.total,\
-                                 fieldnames[2] : s[0], fieldnames[3] : s[1], fieldnames[4] : s[2],\
-                                 fieldnames[5] : len(packCompany)})
+                mon = y.month
+                arr = sorted(mon)
+                for m in arr:
+                    m = mon[m]
+                    s = m.severity
+                    writer.writerow({fieldnames[0] : m.month, fieldnames[1]: m.total,\
+                                     fieldnames[2] : s[0], fieldnames[3] : s[1],\
+                                     fieldnames[4] : s[2]})
                 
 
 if __name__ == '__main__':
