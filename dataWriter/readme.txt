@@ -10,4 +10,4 @@ Put **.xml under the same directory with "dataWriter.py" and initiate it.
                                            3. time (years, month, day)
                                            4. company
                                            5. product
-Data will be written into data.csv
+Data will be written into nvdcve-{Year}-month.csv
