@@ -45,32 +45,66 @@ class NVD_XMLParser(object):
                 vendors[c].add(p)
             self.Catagory.handler(date, severity, vendors)
 
-    def simpleDataPack_time(self):
+    def dataPack_time(self):
         return self.Catagory.simple_data_pack_time()
 
-    def simpleDataPack_company(self):
+    def dataPack_company(self):
         return self.Catagory.simple_data_pack_company()
 
-    def get_specific_company(self, name):
-        d = self.Catagory.vendor
-        assert name in d
-        return d[name]
+    def dataPack_specific_company(self, c):
+        return self.Catagory.simple_data_pack_specific_company(c)
 
+    def dataPack_specific_product(self, c, p):
+        return self.Catagory.simple_data_pack_specific_product(c, p)
+
+    def dataPack_Time_Oriented_company(self, c):
+        return self.Catagory.simple_data_pack_timeO_company(c)
+
+    def dataPack_Time_Oriented_company_allProduct(self, c):
+        v = self.dataPack_specific_company(c)
+        return [self.dataPack_Time_Oriented_product(c, p) for p in v.prod]
+
+    def dataPack_Time_Oriented_product(self, c, p):
+        return self.Catagory.simple_data_pack_timeO_product(c, p)
+    
+2
 def test():
     T = NVD_XMLParser('nvdcve-2015.xml')
     #T = NVD_XMLParser('test.xml')
-    packT = T.simpleDataPack_time()
-    for t in packT:
-        #print t
-        print t.year, t.total, t.severity
 
-    #packF = T.simpleDataPack_company()
+    ### General Time related Info
+    
+    #packT = T.dataPack_time()
+    #for t in packT:
+        #print t
+        #print t.year, t.total, t.severity
+
+    ### General Company related Info
+
+    #packF = T.dataPack_company()
     #arr = sorted(packF)
     #for f in arr:
     #    print packF[f]
 
-    #print T.get_specific_company('microsoft')
-    
+    ### Specific Company/Products related Info
 
+    #print T.dataPack_specific_company('microsoft')
+    #print T.dataPack_specific_product('microsoft', 'windows_8.1')
+    
+    ### Time oriented Info of Company/Products
+
+    #packTC = T.dataPack_Time_Oriented_company('microsoft')
+    #for t in packTC:
+    #    print t
+
+    #packTC = T.dataPack_Time_Oriented_company_allProduct('microsoft')
+    #for tc in packTC:
+    #    for t in tc:
+    #        print t
+
+    packTC = T.dataPack_Time_Oriented_product('microsoft', 'windows_7')
+    for t in packTC:
+        print t
+    
 if __name__ == '__main__':
     test()
