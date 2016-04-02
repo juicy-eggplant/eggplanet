@@ -1,6 +1,9 @@
 from Catagory import Catagory
-import xml.etree.cElementTree as ET
 import re
+try:
+    import xml.etree.cElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET
 
 
 _XMLNS = 'xmlns'
